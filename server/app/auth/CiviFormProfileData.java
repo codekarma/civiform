@@ -23,6 +23,8 @@ import repository.DatabaseExecutionContext;
  */
 public class CiviFormProfileData extends CommonProfile {
   public static final String SESSION_ID = "sessionId";
+  public static final String LAST_ACTIVITY_TIME = "lastActivityTime";
+  public static final String SESSION_START_TIME = "sessionStartTime";
 
   // It is crucial that serialization of this class does not change, so that user profiles continue
   // to be honored and in-progress applications are not lost.
@@ -38,6 +40,9 @@ public class CiviFormProfileData extends CommonProfile {
   public CiviFormProfileData() {
     super();
     addAttribute(SESSION_ID, UUID.randomUUID().toString());
+    long currentTime = System.currentTimeMillis();
+    addAttribute(SESSION_START_TIME, currentTime);
+    addAttribute(LAST_ACTIVITY_TIME, currentTime);
   }
 
   public CiviFormProfileData(Long accountId) {
@@ -68,6 +73,30 @@ public class CiviFormProfileData extends CommonProfile {
   /** Returns the session ID for this profile. */
   public String getSessionId() {
     return getAttributeAsString(SESSION_ID);
+  }
+
+  public void updateLastActivityTime() {
+    addAttribute(LAST_ACTIVITY_TIME, System.currentTimeMillis());
+  }
+
+  /**
+   * Returns the timestamp of the last activity for this session. For backward compatibility with
+   * existing sessions created before session timeout feature, returns current time if the attribute
+   * is not present. This effectively gives legacy sessions a fresh activity timestamp when the
+   * timeout feature is first enabled.
+   */
+  public long getLastActivityTime() {
+    return (Long) getAttributes().getOrDefault(LAST_ACTIVITY_TIME, System.currentTimeMillis());
+  }
+
+  /**
+   * Returns the timestamp when this session was created. For backward compatibility with existing
+   * sessions created before session timeout feature, returns current time if the attribute is not
+   * present. This effectively resets the session duration clock for legacy sessions when the
+   * timeout feature is first enabled.
+   */
+  public long getSessionStartTime() {
+    return (Long) getAttributes().getOrDefault(SESSION_START_TIME, System.currentTimeMillis());
   }
 
   /**
